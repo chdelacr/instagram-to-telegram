@@ -1,3 +1,4 @@
 instagrapi
 Pillow
 python-telegram-bot
+pysftp
