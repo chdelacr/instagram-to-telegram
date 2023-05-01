@@ -1,6 +1,7 @@
 import telegram
 import os
 import pysftp
+from datetime import datetime
 
 async def send_posts_to_channel(posts):
     print("Starting Telegram bot...")
@@ -17,12 +18,15 @@ async def send_posts_to_channel(posts):
     sftp_username = os.environ['SFTP_USERNAME']
     sftp_password = os.environ['SFTP_PASSWORD']
     sftp_path = os.environ['SFTP_PATH']
+
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    filename = f'sent_posts_{current_date}.txt'
     
     with pysftp.Connection(sftp_server, username=sftp_username, password=sftp_password, cnopts=cnopts) as sftp:
         with sftp.cd(sftp_path):
-            if sftp.exists('sent_posts.txt'):
+            if sftp.exists(filename):
                 print("Reading checkpoint file...")
-                with sftp.open('sent_posts.txt', 'r') as f:
+                with sftp.open(filename, 'r') as f:
                     sent_posts = set([line.strip() for line in f.readlines()])
 
     print("Sending only new posts to Telegram channel...")
@@ -43,5 +47,15 @@ async def send_posts_to_channel(posts):
     print("Saving pks of new posts (if any) sent to Telegram channel...")
     with pysftp.Connection(sftp_server, username=sftp_username, password=sftp_password, cnopts=cnopts) as sftp:
         with sftp.cd(sftp_path):
-            with sftp.open('sent_posts.txt', 'w') as f:
+            with sftp.open(filename, 'w') as f:
                 f.write('\n'.join(sent_posts))
+
+            for file in sftp.listdir():
+                if file.startswith('sent_posts_'):
+                    file_path = f'{sftp_path}/{file}'
+                    mtime = sftp.stat(file_path).st_mtime
+                    current_time = datetime.now().time()
+                    if current_time.hour == 23 and current_time.minute >= 50 and current_time.minute <= 55:
+                        print("Deleting files in SFTP that are older than 7 days...")
+                        if (datetime.now() - datetime.fromtimestamp(mtime)).days > 7:
+                            sftp.remove(file_path)
