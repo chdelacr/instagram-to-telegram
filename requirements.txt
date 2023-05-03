@@ -1,3 +1,4 @@
+python-dotenv
 instagrapi
 Pillow
 python-telegram-bot
