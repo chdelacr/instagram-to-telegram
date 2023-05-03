@@ -1,9 +1,9 @@
-from dotenv import load_dotenv
-from instagram_handler import get_latest_posts
-from telegram_handler import send_posts_to_channel
 import instagrapi
 import os
 import asyncio
+from dotenv import load_dotenv
+from instagram_handler import get_latest_posts
+from telegram_handler import send_posts_to_channel
 
 async def main():
     # Load environment variables
