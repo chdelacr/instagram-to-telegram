@@ -1,6 +1,7 @@
 import telegram
 import os
 from sftp_handler import sftp_utils
+from datetime import datetime
 
 async def send_posts_to_channel(posts):
     print("Starting Telegram bot...")
@@ -8,10 +9,13 @@ async def send_posts_to_channel(posts):
 
     # Get sent posts from checkpoint file
     sent_posts = sftp_utils('r')
-
+    
     channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
+    current_date = datetime.now()
     for post in posts:
-        if f'{post.pk}_{post.code}_{post.taken_at}' not in sent_posts:
+        # Send only today's posts
+        taken_at_converted = post.taken_at.astimezone(current_date.tzinfo)
+        if taken_at_converted.date() == current_date.date() and f'{post.pk}_{post.code}_{post.taken_at}' not in sent_posts:
             if post.media_type == 1:
                 print("Sending new picture post to Telegram channel...")
                 photo = post.thumbnail_url

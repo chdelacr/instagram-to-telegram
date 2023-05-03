@@ -1,5 +1,5 @@
-python-dotenv
-instagrapi
-Pillow
-python-telegram-bot
-pysftp
+python-dotenv==1.0.0
+instagrapi==1.17.6
+Pillow==9.5.0
+python-telegram-bot==20.2
+pysftp==0.2.9
