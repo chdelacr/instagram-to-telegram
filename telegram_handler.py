@@ -1,21 +1,25 @@
 import telegram
 import os
 from sftp_handler import sftp_utils
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 async def send_posts_to_channel(posts):
     print("Starting Telegram bot...")
     bot = telegram.Bot(os.getenv("TELEGRAM_BOT_TOKEN"))
 
-    # Get sent posts from checkpoint file
+    print("Getting sent posts and last post date...")
     sent_posts = sftp_utils('r')
+    if sent_posts:
+        last_post = list(sent_posts)[-1].strip()
+        last_post_date_str = last_post.split(",")[-1]
+        last_post_date = datetime.fromisoformat(last_post_date_str).astimezone(timezone.utc)
+    else:
+        last_post_date = (datetime.utcnow() - timedelta(days=1)).astimezone(timezone.utc)
     
     channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
-    current_date = datetime.now()
+    sent_posts_sorted = sorted(sent_posts, key=lambda x: datetime.fromisoformat(x.split(",")[-1]))
     for post in posts:
-        # Send only today's posts
-        taken_at_converted = post.taken_at.astimezone(current_date.tzinfo)
-        if taken_at_converted.date() == current_date.date() and f'{post.pk}_{post.code}_{post.taken_at}' not in sent_posts:
+        if post.taken_at > last_post_date and f'{post.pk},{post.code},{post.taken_at}' not in sent_posts:
             if post.media_type == 1:
                 print("Sending new picture post to Telegram channel...")
                 photo = post.thumbnail_url
@@ -39,7 +43,7 @@ async def send_posts_to_channel(posts):
                         
                 await bot.send_media_group(chat_id=channel_id, media=media_group)"""
 
-            sent_posts.add(f'{post.pk}_{post.code}_{post.taken_at}')
+            sent_posts_sorted.append(f'{post.pk},{post.code},{post.taken_at}')
 
-    sftp_utils('w', sent_posts)
+    sftp_utils('w', sent_posts_sorted)
     sftp_utils('d')

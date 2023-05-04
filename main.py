@@ -22,8 +22,8 @@ async def main():
         print("Sending new posts to Telegram channel...")
         await send_posts_to_channel(posts)
         
-        print("Look again for new posts in 15 minutes\n")
-        await asyncio.sleep(900)
+        print("Look again for new posts in 30 minutes\n")
+        await asyncio.sleep(1800)
 
 if __name__ == '__main__':
     asyncio.run(main())
