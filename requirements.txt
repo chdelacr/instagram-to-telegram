@@ -3,3 +3,4 @@ instagrapi==1.17.6
 Pillow==9.5.0
 python-telegram-bot==20.2
 pysftp==0.2.9
+urllib3==1.26.15
