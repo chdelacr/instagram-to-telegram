@@ -30,18 +30,26 @@ async def send_posts_to_channel(posts):
                 video = post.video_url
                 caption = post.caption_text
                 await bot.send_video(chat_id=channel_id, video=video, caption=caption)
-            # Disabling album handling since Telegram isn't showing captions properly
-            """elif post.media_type == 8:
+            elif post.media_type == 8:
                 print("Sending new album post to Telegram channel...")
                 media_group = []
                 caption = post.caption_text
+                caption_added = False
                 for p in post.resources:
                     if p.media_type == 1:
-                        media_group.append(telegram.InputMediaPhoto(p.thumbnail_url, caption=caption))
+                        if not caption_added:
+                            media_group.append(telegram.InputMediaPhoto(p.thumbnail_url, caption=caption))
+                            caption_added = True
+                        else:
+                            media_group.append(telegram.InputMediaPhoto(p.thumbnail_url))
                     elif p.media_type == 2:
-                        media_group.append(telegram.InputMediaVideo(p.video_url, caption=caption))
+                        if not caption_added:
+                            media_group.append(telegram.InputMediaVideo(p.video_url, caption=caption))
+                            caption_added = True
+                        else:
+                            media_group.append(telegram.InputMediaVideo(p.video_url))
                         
-                await bot.send_media_group(chat_id=channel_id, media=media_group)"""
+                await bot.send_media_group(chat_id=channel_id, media=media_group)
 
             sent_posts_sorted.append(f'{post.pk},{post.code},{post.taken_at}')
 
