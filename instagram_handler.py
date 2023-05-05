@@ -1,7 +1,18 @@
 import logging
+import instagrapi
+import os
 
 # Create logger
 logger = logging.getLogger("__main__.instagram_handler")
+
+def log_in_to_instagram():
+    logger.info("Log in to Instagram")
+    cl = instagrapi.Client()
+    username = os.getenv("INSTAGRAM_USERNAME")
+    password = os.getenv("INSTAGRAM_PASSWORD")
+    cl.login(username, password)
+
+    return cl, username
 
 def get_latest_posts(cl, username):
     # Get id from Instagram username

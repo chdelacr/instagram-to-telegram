@@ -1,9 +1,7 @@
-import instagrapi
-import os
 import asyncio
 import logging
 from dotenv import load_dotenv
-from instagram_handler import get_latest_posts
+from instagram_handler import log_in_to_instagram, get_latest_posts
 from telegram_handler import send_posts_to_channel
 
 # Create logger
@@ -20,12 +18,9 @@ run_interval = 1800
 async def main():
     # Load environment variables
     load_dotenv()
-    
-    logger.info("Login into Instagram")
-    cl = instagrapi.Client()
-    username = os.getenv("INSTAGRAM_USERNAME")
-    password = os.getenv("INSTAGRAM_PASSWORD")
-    cl.login(username, password)
+
+    # Log in to Instagram
+    cl, username = log_in_to_instagram()
 
     while True:
         # Get latest posts from Instagram
