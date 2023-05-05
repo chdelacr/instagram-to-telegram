@@ -1,8 +1,13 @@
 import os
 import pysftp
+import logging
 from datetime import datetime, timedelta
+
+# Create logger
+logger = logging.getLogger("__main__.sftp_handler")
     
 def sftp_utils(operation, sent_posts = set()):
+    # SFTP credentials
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
 
@@ -22,7 +27,7 @@ def sftp_utils(operation, sent_posts = set()):
                 for i in range(7):
                     filename = f'sent_posts_{(datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")}.txt'
                     if sftp.exists(filename):
-                        print("Reading checkpoint file...")
+                        logger.info("Reading checkpoint file in SFTP server")
                         with sftp.open(filename, 'r') as f:
                             sent_posts = set([line.strip() for line in f.readlines()])
                         break
@@ -33,7 +38,7 @@ def sftp_utils(operation, sent_posts = set()):
             return sent_posts
         elif operation == 'w':
             with sftp.cd(sftp_path):
-                print("Writing checkpoint file...")
+                logger.info("Writing checkpoint file in SFTP server")
                 with sftp.open(filename, 'w') as f:
                     f.write('\n'.join(sent_posts))
         elif operation == 'd':
@@ -42,5 +47,5 @@ def sftp_utils(operation, sent_posts = set()):
                     file_path = f'{sftp_path}/{file}'
                     mtime = sftp.stat(file_path).st_mtime
                     if (datetime.now() - datetime.fromtimestamp(mtime)).days > 7:
-                        print("Deleting checkpoint files older than 7 days...")
+                        logger.info("Deleting checkpoint files older than 7 days from SFTP server")
                         sftp.remove(file_path)

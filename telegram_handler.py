@@ -1,13 +1,17 @@
 import telegram
 import os
+import logging
 from sftp_handler import sftp_utils
 from datetime import datetime, timedelta, timezone
 
-async def send_posts_to_channel(posts):
-    print("Starting Telegram bot...")
-    bot = telegram.Bot(os.getenv("TELEGRAM_BOT_TOKEN"))
+# Create logger
+logger = logging.getLogger("__main__.telegram_handler")
 
-    print("Getting sent posts and last post date...")
+async def send_posts_to_channel(posts):
+    # Start Telegram bot
+    bot = telegram.Bot(os.getenv("TELEGRAM_BOT_TOKEN"))
+    
+    logger.info("Getting sent posts and last post date")
     sent_posts = sftp_utils('r')
     if sent_posts:
         last_post = list(sent_posts)[-1].strip()
@@ -16,22 +20,25 @@ async def send_posts_to_channel(posts):
     else:
         last_post_date = (datetime.utcnow() - timedelta(days=1)).astimezone(timezone.utc)
     
-    channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
+    # Sort sent posts to keep them sorted in the checkpoint file
     sent_posts_sorted = sorted(sent_posts, key=lambda x: datetime.fromisoformat(x.split(",")[-1]))
+    
+    logger.info("Sending new posts to Telegram channel (if any)")
+    channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
     for post in posts:
         if post.taken_at > last_post_date and f'{post.pk},{post.code},{post.taken_at}' not in sent_posts:
             if post.media_type == 1:
-                print("Sending new picture post to Telegram channel...")
+                logger.info("Sending new picture post to Telegram channel")
                 photo = post.thumbnail_url
                 caption = post.caption_text
                 await bot.send_photo(chat_id=channel_id, photo=photo, caption=caption)
             if post.media_type == 2:
-                print("Sending new video post to Telegram channel...")
+                logger.info("Sending new video post to Telegram channel")
                 video = post.video_url
                 caption = post.caption_text
                 await bot.send_video(chat_id=channel_id, video=video, caption=caption)
             elif post.media_type == 8:
-                print("Sending new album post to Telegram channel...")
+                logger.info("Sending new album post to Telegram channel")
                 media_group = []
                 caption = post.caption_text
                 caption_added = False
@@ -51,6 +58,7 @@ async def send_posts_to_channel(posts):
                         
                 await bot.send_media_group(chat_id=channel_id, media=media_group)
 
+            # Append new posts to sent posts list
             sent_posts_sorted.append(f'{post.pk},{post.code},{post.taken_at}')
 
     sftp_utils('w', sent_posts_sorted)
