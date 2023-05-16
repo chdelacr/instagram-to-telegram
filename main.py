@@ -1,5 +1,7 @@
 import asyncio
+import instagrapi
 import logging
+import os
 from dotenv import load_dotenv
 from instagram_handler import log_in_to_instagram, get_latest_posts
 from telegram_handler import send_posts_to_channel
@@ -16,15 +18,28 @@ logger.addHandler(handler)
 run_interval = 1800
 
 async def main():
+    cl = instagrapi.Client()
+    
     # Load environment variables
     load_dotenv()
-
-    # Log in to Instagram
-    cl, username = log_in_to_instagram()
+    username = os.getenv("INSTAGRAM_USERNAME")
+    
+    if os.getenv("PRIVATE_ACCESS") == "Y":
+        # Log in to Instagram
+        cl = log_in_to_instagram(cl, username)
+        
+    # Get id from Instagram username
+    try:
+        user_id = cl.user_id_from_username(username)
+    except:
+        # Retry by log in into Instagram
+        logger.info("Unable to get user ID from public data, retrying again by logging in")
+        cl = log_in_to_instagram(cl, username)
+        user_id = cl.user_id_from_username(username)
 
     while True:
         # Get latest posts from Instagram
-        posts = get_latest_posts(cl, username)
+        posts = get_latest_posts(cl, user_id)
         
         # Send new posts to Telegram channel
         await send_posts_to_channel(posts)
