@@ -18,20 +18,21 @@ def sftp_utils(operation, sent_posts = set()):
 
     current_date = datetime.utcnow().strftime('%Y-%m-%d')
     filename = f'sent_posts_{current_date}.txt'
+    lookup_days = 7
     
     # Connect to SFTP server
     with pysftp.Connection(sftp_server, username=sftp_username, password=sftp_password, cnopts=cnopts) as sftp:
         if operation == 'r':
             with sftp.cd(sftp_path):
-                # Look for files of the last 7 days
-                for i in range(7):
+                # Look for latest checkpoint files
+                for i in range(lookup_days):
                     filename = f'sent_posts_{(datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")}.txt'
                     if sftp.exists(filename):
                         logger.info("Reading checkpoint file in SFTP server")
                         with sftp.open(filename, 'r') as f:
                             sent_posts = set([line.strip() for line in f.readlines()])
                         break
-                    elif (datetime.utcnow() - timedelta(days=7)) > datetime.strptime(filename.split("_")[-1].split(".")[0], '%Y-%m-%d'):
+                    elif (datetime.utcnow() - timedelta(days=lookup_days)) > datetime.strptime(filename.split("_")[-1].split(".")[0], '%Y-%m-%d'):
                         break
                 else:
                     sent_posts = set()
@@ -46,6 +47,6 @@ def sftp_utils(operation, sent_posts = set()):
                 if file.startswith('sent_posts_'):
                     file_path = f'{sftp_path}/{file}'
                     mtime = sftp.stat(file_path).st_mtime
-                    if (datetime.now() - datetime.fromtimestamp(mtime)).days > 7:
-                        logger.info("Deleting checkpoint files older than 7 days from SFTP server")
+                    if (datetime.now() - datetime.fromtimestamp(mtime)).days > lookup_days:
+                        logger.info(f"Deleting checkpoint files older than {lookup_days} days from SFTP server")
                         sftp.remove(file_path)
