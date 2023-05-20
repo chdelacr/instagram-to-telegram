@@ -1,12 +1,12 @@
+import logging
 import os
 import pysftp
-import logging
 from datetime import datetime, timedelta
 
 # Create logger
 logger = logging.getLogger("__main__.sftp_handler")
-    
-def sftp_utils(operation, new_posts = set()):
+
+def get_sftp_credentials():
     # SFTP credentials
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
@@ -15,6 +15,24 @@ def sftp_utils(operation, new_posts = set()):
     sftp_username = os.getenv("SFTP_USERNAME")
     sftp_password = os.getenv("SFTP_PASSWORD")
     sftp_path = os.getenv("SFTP_PATH")
+    
+    return cnopts, sftp_server, sftp_username, sftp_password, sftp_path
+
+def sftp_instagram_dump(operation):
+    cnopts, sftp_server, sftp_username, sftp_password, sftp_path = get_sftp_credentials()
+    
+    with pysftp.Connection(sftp_server, username=sftp_username, password=sftp_password, cnopts=cnopts) as sftp:
+        with sftp.cd(sftp_path):
+            if operation == 'l':
+                logger.info("Loading dump settings from SFTP")
+                sftp.get("remote_dump.json", "local_dump.json")
+            elif operation == 'c':
+                logger.info("Copying dump settings to SFTP")
+                sftp.put("local_dump.json", "remote_dump.json")
+        sftp.close()
+    
+def sftp_checkpoint_utils(operation, new_posts = set()):
+    cnopts, sftp_server, sftp_username, sftp_password, sftp_path = get_sftp_credentials()
 
     current_date = datetime.utcnow().strftime('%Y-%m-%d')
     filename = f'sent_posts_{current_date}.txt'
@@ -54,3 +72,5 @@ def sftp_utils(operation, new_posts = set()):
                     if (datetime.now() - datetime.fromtimestamp(mtime)).days > lookup_days:
                         logger.info(f"Deleting checkpoint files older than {lookup_days} days from SFTP server")
                         sftp.remove(file_path)
+                        
+        sftp.close()

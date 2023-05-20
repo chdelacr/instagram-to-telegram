@@ -1,3 +1,4 @@
 # .gitignore
 venv/
 __pycache__/
+local_dump.json

@@ -1,8 +1,8 @@
-import telegram
-import os
 import logging
-from sftp_handler import sftp_utils
+import os
+import telegram
 from datetime import datetime, timedelta, timezone
+from sftp_handler import sftp_checkpoint_utils
 
 # Create logger
 logger = logging.getLogger("__main__.telegram_handler")
@@ -12,7 +12,7 @@ async def send_posts_to_channel(posts):
     bot = telegram.Bot(os.getenv("TELEGRAM_BOT_TOKEN"))
     
     # Get sent posts and last post date to get new posts
-    sent_posts = sftp_utils('r')
+    sent_posts = sftp_checkpoint_utils('r')
     if sent_posts:
         last_post = list(sent_posts)[-1].strip()
         last_post_date_str = last_post.split(",")[-1]
@@ -61,5 +61,5 @@ async def send_posts_to_channel(posts):
 
     # Sort new posts to keep them sorted in the checkpoint file
     new_posts_sorted = sorted(new_posts, key=lambda x: datetime.fromisoformat(x.split(",")[-1]))
-    sftp_utils('w', new_posts_sorted)
-    sftp_utils('d')
+    sftp_checkpoint_utils('w', new_posts_sorted)
+    sftp_checkpoint_utils('d')
