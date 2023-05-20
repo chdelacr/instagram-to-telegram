@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # Create logger
 logger = logging.getLogger("__main__.sftp_handler")
     
-def sftp_utils(operation, sent_posts = set()):
+def sftp_utils(operation, new_posts = set()):
     # SFTP credentials
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
@@ -38,10 +38,14 @@ def sftp_utils(operation, sent_posts = set()):
                     sent_posts = set()
             return sent_posts
         elif operation == 'w':
-            with sftp.cd(sftp_path):
-                logger.info("Writing checkpoint file in SFTP server")
-                with sftp.open(filename, 'w') as f:
-                    f.write('\n'.join(sent_posts))
+            if new_posts:
+                with sftp.cd(sftp_path):
+                    logger.info("Updating checkpoint file in SFTP server")
+                    with sftp.open(filename, 'a') as f:
+                        f.write('\n'.join(new_posts))
+                        f.write('\n')
+            else:
+                logger.info("No new Instagram posts")
         elif operation == 'd':
             for file in sftp.listdir():
                 if file.startswith('sent_posts_'):

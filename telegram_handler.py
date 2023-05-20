@@ -11,7 +11,7 @@ async def send_posts_to_channel(posts):
     # Start Telegram bot
     bot = telegram.Bot(os.getenv("TELEGRAM_BOT_TOKEN"))
     
-    logger.info("Getting sent posts and last post date")
+    # Get sent posts and last post date to get new posts
     sent_posts = sftp_utils('r')
     if sent_posts:
         last_post = list(sent_posts)[-1].strip()
@@ -20,11 +20,9 @@ async def send_posts_to_channel(posts):
     else:
         last_post_date = (datetime.utcnow() - timedelta(days=1)).astimezone(timezone.utc)
     
-    # Sort sent posts to keep them sorted in the checkpoint file
-    sent_posts_sorted = sorted(sent_posts, key=lambda x: datetime.fromisoformat(x.split(",")[-1]))
-    
-    logger.info("Sending new posts to Telegram channel (if any)")
+    logger.info("Looking for new Instagram posts")
     channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
+    new_posts = []
     for post in posts:
         if post.taken_at > last_post_date and f'{post.pk},{post.code},{post.taken_at}' not in sent_posts:
             if post.media_type == 1:
@@ -59,7 +57,9 @@ async def send_posts_to_channel(posts):
                 await bot.send_media_group(chat_id=channel_id, media=media_group)
 
             # Append new posts to sent posts list
-            sent_posts_sorted.append(f'{post.pk},{post.code},{post.taken_at}')
+            new_posts.append(f'{post.pk},{post.code},{post.taken_at}')
 
-    sftp_utils('w', sent_posts_sorted)
+    # Sort new posts to keep them sorted in the checkpoint file
+    new_posts_sorted = sorted(new_posts, key=lambda x: datetime.fromisoformat(x.split(",")[-1]))
+    sftp_utils('w', new_posts_sorted)
     sftp_utils('d')
