@@ -19,12 +19,11 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
 
     steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.9.1
-      with:
-        access_token: ${{ secrets.WORKFLOW_TOKEN }}
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Set up Python
