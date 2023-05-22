@@ -65,12 +65,12 @@ def sftp_checkpoint_utils(operation, new_posts = set()):
             else:
                 logger.info("No new Instagram posts")
         elif operation == 'd':
-            for file in sftp.listdir():
-                if file.startswith('sent_posts_'):
-                    file_path = f'{sftp_path}/{file}'
-                    mtime = sftp.stat(file_path).st_mtime
-                    if (datetime.now() - datetime.fromtimestamp(mtime)).days > lookup_days:
-                        logger.info(f"Deleting checkpoint files older than {lookup_days} days from SFTP server")
-                        sftp.remove(file_path)
+            with sftp.cd(sftp_path):
+                for file in sftp.listdir():
+                    if file.startswith('sent_posts_'):
+                        mtime = sftp.stat(file).st_mtime
+                        if (datetime.now() - datetime.fromtimestamp(mtime)).days > lookup_days:
+                            logger.info(f"Deleting checkpoint files older than {lookup_days} days from SFTP server")
+                            sftp.remove(file)
                         
         sftp.close()
